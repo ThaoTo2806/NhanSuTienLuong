@@ -1,4 +1,4 @@
-package com.sof
+package com.sof123lqv
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -19,4 +19,10 @@ class MainActivity : ReactActivity() {
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+
+  // Không cần gọi init của gesture handler nữa
+  override fun onCreate(savedInstanceState: android.os.Bundle?) {
+    super.onCreate(savedInstanceState)
+    // Gesture handler không còn cần thiết ở đây nữa, nên không cần thêm bất kỳ dòng mã nào
+  }
 }

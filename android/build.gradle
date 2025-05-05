@@ -1,3 +1,8 @@
+// Apply the Google services plugin if needed
+apply plugin: 'com.google.gms.google-services'
+
+apply plugin: "com.facebook.react.rootproject"
+
 buildscript {
     ext {
         buildToolsVersion = "35.0.0"
@@ -5,16 +10,22 @@ buildscript {
         compileSdkVersion = 35
         targetSdkVersion = 34
         ndkVersion = "27.1.12297006"
-        kotlinVersion = "2.0.21"
+        kotlinVersion = "2.0.21" //2.0.21"
     }
     repositories {
         google()
         mavenCentral()
+        maven {
+            url new URI("https://jitpack.io")
+        }
+        jcenter()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
+        classpath("com.android.tools.build:gradle:8.8.0")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        //classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("com.google.gms:google-services:4.3.15")
+        classpath ("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
 
