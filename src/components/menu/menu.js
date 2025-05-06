@@ -1,21 +1,21 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import React, {useContext, useState, useEffect} from 'react';
+import {Image, ScrollView, Text, View} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Icon from 'react-native-vector-icons/Ionicons'; 
+import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { COLORS } from '../../assets/colors';
-import { SPACINGS } from '../../assets/spacings';
-import { STORAGE_KEYS as KEYS } from '../../assets/storage-keys';
-import { styles } from './style';
-import { AuthContext } from '../common/contexts';
-import { API_URLS } from '../../assets/api-urls';
+import {COLORS} from '../../assets/colors';
+import {SPACINGS} from '../../assets/spacings';
+import {STORAGE_KEYS as KEYS} from '../../assets/storage-keys';
+import {styles} from './style';
+import {AuthContext} from '../common/contexts';
+import {API_URLS} from '../../assets/api-urls';
 
-const { FONT_SIZE } = SPACINGS;
-const { GRADIENT } = COLORS;
+const {FONT_SIZE} = SPACINGS;
+const {GRADIENT} = COLORS;
 
-export const Menu = ({ navigation }) => {
+export const Menu = ({navigation}) => {
   const [permission, setPermission] = useState(null);
-  const { signOut } = useContext(AuthContext);
+  const {signOut} = useContext(AuthContext);
 
   useEffect(() => {
     let mounted = true;
@@ -60,7 +60,6 @@ export const Menu = ({ navigation }) => {
     signOut();
     navigation.navigate('Login');
   };
-  
 
   return (
     <View style={styles.container}>
@@ -70,7 +69,10 @@ export const Menu = ({ navigation }) => {
       />
       <ScrollView contentContainerStyle={styles.wrapper}>
         <View style={styles.logo}>
-          <Image source={require('../../assets/images/sof.png')} style={styles.image}/>
+          <Image
+            source={require('../../assets/images/sof.png')}
+            style={styles.image}
+          />
         </View>
         <View style={styles.button}>
           <Icon.Button
@@ -166,6 +168,30 @@ export const Menu = ({ navigation }) => {
             size={FONT_SIZE}
             iconStyle={styles.icon}>
             <Text style={styles.text}>Xem ca làm việc</Text>
+          </Icon.Button>
+        </View>
+        <View style={styles.button}>
+          <Icon.Button
+            name="storefront-outline"
+            backgroundColor={COLORS.PRIMARY}
+            onPress={() => {
+              navigation.navigate('DangKyCom');
+            }}
+            size={FONT_SIZE}
+            iconStyle={styles.icon}>
+            <Text style={styles.text}>Đăng ký cơm</Text>
+          </Icon.Button>
+        </View>
+        <View style={styles.button}>
+          <Icon.Button
+            name="library-outline"
+            backgroundColor={COLORS.PRIMARY}
+            onPress={() => {
+              navigation.navigate('BaoCaoCong');
+            }}
+            size={FONT_SIZE}
+            iconStyle={styles.icon}>
+            <Text style={styles.text}>Báo cáo công</Text>
           </Icon.Button>
         </View>
         <View style={styles.button}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Dimensions,
   Modal,
@@ -10,51 +10,39 @@ import {
   View,
 } from 'react-native';
 import PropTypes from 'prop-types';
-import Icon from 'react-native-vector-icons/Ionicons'; 
+import Icon from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
-import { MonthCell } from '../month-cell/month-cell.js';
-import { styles } from './style';
+import {MonthCell} from '../month-cell/month-cell.js';
+import {styles} from './style';
 
 const POPUP_MARGIN = 50;
-const MONTHS = 'Thg 1,Thg 2,Thg 3,Thg 4,Thg 5,Thg 6,Thg 7,Thg 8,Thg 9,Thg 10,Thg 11,Thg 12'.split(
-  ',',
-);
+const MONTHS =
+  'Thg 1,Thg 2,Thg 3,Thg 4,Thg 5,Thg 6,Thg 7,Thg 8,Thg 9,Thg 10,Thg 11,Thg 12'.split(
+    ',',
+  );
 const ROW_COUNT = 3;
 const COL_COUNT = 4;
 const Touchable =
   Platform.OS === 'android' ? TouchableNativeFeedback : TouchableOpacity;
 
-const MonthPicker = props => {
-  const {
-    bgColor,
-    fgColor,
-    fontSize,
-    onChange,
-    popupHeaderBgColor,
-    selected,
-    selectedBgColor,
-    selectedFgColor,
-  } = props;
-
-  // The popup is displayed or not
+const MonthPicker = ({
+  selected = new Date(),
+  onChange,
+  popupHeaderBgColor = '#3187fe',
+  fontSize = 16,
+  selectedBgColor = '#3187fe',
+  selectedFgColor = '#fff',
+  bgColor = '#fff',
+  fgColor = '#333',
+}) => {
   const [displayPopup, setDisplayPopup] = useState(false);
-
-  // Text to display on the picker when an item is selected (selected text)
   const [text, setText] = useState(dayjs(selected).format('MM/YYYY'));
-
-  // Selected year
   const [year, setYear] = useState(selected.getFullYear());
-
-  // Selected month
   const [month, setMonth] = useState(selected.getMonth());
-
   const mounted = useRef(true);
 
-  const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
-
+  const {height: screenHeight, width: screenWidth} = Dimensions.get('window');
   let pickerSize_ = Math.min(screenHeight, screenWidth);
-
-  // make size divisible by 4
   pickerSize_ -= (pickerSize_ % 4) + POPUP_MARGIN * 2;
 
   const styles_ = StyleSheet.create({
@@ -64,9 +52,6 @@ const MonthPicker = props => {
       marginVertical: 2,
       paddingLeft: 2,
     },
-    /**
-     * Month picker's text (next to calendar icon)
-     */
     text: {
       color: '#333',
       fontSize: fontSize,
@@ -105,9 +90,6 @@ const MonthPicker = props => {
       justifyContent: 'center',
       width: pickerSize_ / 2,
     },
-    /**
-     * Popup's header text
-     */
     headerText: {
       color: selectedFgColor,
       fontSize: fontSize + 6,
@@ -142,19 +124,13 @@ const MonthPicker = props => {
     };
   }, []);
 
-  const hidePopup_ = () => {
-    mounted.current && setDisplayPopup(false);
-  };
-
-  const showPopup_ = () => {
-    mounted.current && setDisplayPopup(true);
-  };
+  const hidePopup_ = () => mounted.current && setDisplayPopup(false);
+  const showPopup_ = () => mounted.current && setDisplayPopup(true);
 
   const resetMonth_ = () => {
     const date = dayjs(text, 'MM/YYYY');
     const m = date.month();
     const y = date.year();
-
     if (mounted.current) {
       setMonth(m);
       setYear(y);
@@ -164,86 +140,61 @@ const MonthPicker = props => {
   const previousMonth_ = () => {
     let m = month - 1;
     let y = year;
-
     if (m === -1) {
       m = 11;
       y--;
     }
-
     if (mounted.current) {
       setMonth(m);
       setYear(y);
       setText(dayjs(new Date(y, m, 1)).format('MM/YYYY'));
     }
-
     onChange(m + 1, y);
   };
 
   const nextMonth_ = () => {
     let m = month + 1;
     let y = year;
-
     if (m === 12) {
       m = 0;
       y++;
     }
-
     if (mounted.current) {
       setMonth(m);
       setYear(y);
       setText(dayjs(new Date(y, m, 1)).format('MM/YYYY'));
     }
-
     onChange(m + 1, y);
   };
 
-  const previousYear_ = () => {
-    let y = year - 1;
-    mounted.current && setYear(y);
-  };
-
-  const nextYear_ = () => {
-    let y = year + 1;
-    mounted.current && setYear(y);
-  };
-
-  const monthSelect_ = m => {
-    mounted.current && setMonth(m);
-  };
+  const previousYear_ = () => mounted.current && setYear(year - 1);
+  const nextYear_ = () => mounted.current && setYear(year + 1);
+  const monthSelect_ = m => mounted.current && setMonth(m);
 
   const monthRows = [];
-
   for (let i = 0; i < ROW_COUNT; i++) {
     const monthCells = [];
-
     for (let j = 0; j < COL_COUNT; j++) {
       const m = i * COL_COUNT + j;
-      const cell = (
+      monthCells.push(
         <MonthCell
           fontSize={fontSize}
           key={`c${m}`}
           label={MONTHS[m]}
           month={m}
-          onPress={selectedMonth => {
-            monthSelect_(selectedMonth);
-          }}
+          onPress={monthSelect_}
           selected={month === m}
           selectedBgColor={selectedBgColor}
           selectedFgColor={selectedFgColor}
           size={pickerSize_ / 4}
-        />
+        />,
       );
-
-      monthCells.push(cell);
     }
-
-    const row = (
+    monthRows.push(
       <View style={styles_.monthRows} key={`r${i}`}>
         {monthCells}
-      </View>
+      </View>,
     );
-
-    monthRows.push(row);
   }
 
   return (
@@ -286,10 +237,7 @@ const MonthPicker = props => {
               resetMonth_();
             }}>
             <View style={styles_.popupOverlay}>
-              <Touchable
-                onPress={() => {
-                  /* Override parent, do nothing */
-                }}>
+              <Touchable onPress={() => {}}>
                 <View style={styles_.popupContainer}>
                   <View style={styles_.popupHeader}>
                     <Touchable onPress={previousYear_}>
@@ -345,48 +293,14 @@ const MonthPicker = props => {
 };
 
 MonthPicker.propTypes = {
-  /**
-   * Selected month, default value is current month
-   */
   selected: PropTypes.instanceOf(Date),
-  /**
-   * Things to do when user select a month
-   */
   onChange: PropTypes.func.isRequired,
-  /**
-   * Background color of popup header
-   */
   popupHeaderBgColor: PropTypes.string,
-  /**
-   * Font size, default value is 16
-   */
   fontSize: PropTypes.number,
-  /**
-   * Background color of selected cell
-   */
   selectedBgColor: PropTypes.string,
-  /**
-   * Foreground color of selected cell
-   */
   selectedFgColor: PropTypes.string,
-  /**
-   * Background color of normal cell
-   */
   bgColor: PropTypes.string,
-  /**
-   * Foreground color of normal cell
-   */
   fgColor: PropTypes.string,
 };
 
-MonthPicker.defaultProps = {
-  selected: new Date(),
-  fontSize: 16,
-  bgColor: '#fff',
-  selectedBgColor: '#3187fe',
-  selectedFgColor: '#fff',
-  fgColor: '#333',
-  popupHeaderBgColor: '#3187fe',
-};
-
-export { MonthPicker };
+export {MonthPicker};

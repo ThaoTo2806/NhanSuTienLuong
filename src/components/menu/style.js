@@ -1,8 +1,8 @@
-import { StyleSheet } from 'react-native';
-import { COLORS } from '../../assets/colors';
-import { SPACINGS } from '../../assets/spacings';
+import {StyleSheet} from 'react-native';
+import {COLORS} from '../../assets/colors';
+import {SPACINGS} from '../../assets/spacings';
 
-const { FONT_SIZE, MARGIN, PADDING } = SPACINGS;
+const {FONT_SIZE, MARGIN, PADDING} = SPACINGS;
 
 export const styles = StyleSheet.create({
   container: {
@@ -19,7 +19,7 @@ export const styles = StyleSheet.create({
     padding: PADDING * 2,
   },
   logo: {
-    marginVertical: 50,
+    marginVertical: 20,
     alignItems: 'center',
   },
   image: {

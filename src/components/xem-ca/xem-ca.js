@@ -10,25 +10,26 @@ import {
   Dimensions,
   ScrollView,
   Text,
-  View, StyleSheet,
+  View,
+  StyleSheet,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
-import { DayCell } from '../common/day-cell/day_cell';
-import { MonthPicker } from '../common/month-picker/month-picker';
-import { commonStyles } from '../../assets/common-styles';
-import { COLORS } from '../../assets/colors';
-import { SPACINGS } from '../../assets/spacings';
-import { MESSAGES } from '../../assets/messages';
-import { LangContext } from '../common/contexts';
-import { styles } from './style';
-import { BaseAxios } from '../../helpers/base-axios';
+import {DayCell} from '../common/day-cell/day_cell';
+import {MonthPicker} from '../common/month-picker/month-picker';
+import {commonStyles} from '../../assets/common-styles';
+import {COLORS} from '../../assets/colors';
+import {SPACINGS} from '../../assets/spacings';
+import {MESSAGES} from '../../assets/messages';
+import {LangContext} from '../common/contexts';
+import {styles} from './style';
+import {BaseAxios} from '../../helpers/base-axios';
 
-const { formGroup, label, content: contentStyle } = commonStyles;
-const { BORDER_RADIUS, FONT_SIZE, MARGIN, PADDING } = SPACINGS;
+const {formGroup, label, content: contentStyle} = commonStyles;
+const {BORDER_RADIUS, FONT_SIZE, MARGIN, PADDING} = SPACINGS;
 
 export const XemCa = () => {
-  const { lang } = useContext(LangContext);
+  const {lang} = useContext(LangContext);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [nam, setNam] = useState(new Date().getFullYear());
@@ -58,7 +59,7 @@ export const XemCa = () => {
         year: nam,
       };
 
-      const json = await BaseAxios.get('/', { query });
+      const json = await BaseAxios.get('/', {query});
       const newData = json.data
         .map(d => ({
           day: dayjs(d.lv004).date(),
@@ -91,7 +92,7 @@ export const XemCa = () => {
   }, [layBangCa_]);
 
   const onLayout_ = () => {
-    const { height, width } = Dimensions.get('window');
+    const {height, width} = Dimensions.get('window');
     const ratio = width / height;
 
     let newCellPerRow;
@@ -121,34 +122,36 @@ export const XemCa = () => {
     const todayText = dayjs().format('YYYYMMDD');
     const schedulerRows = [];
     const tongSoNgay = data.length;
-  
+
     // Get the first day of the month and its weekday
     const firstDayOfMonth = dayjs(new Date(nam, thang - 1, 1));
     const firstDayWeekday = firstDayOfMonth.day(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  
+
     // Adjust the firstDayWeekday to match the desired start of the week (Monday)
     const adjustedFirstDayWeekday = (firstDayWeekday + 6) % 7; // Convert to 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
-  
+
     // Add empty cells for days before the first day of the month
-    const emptyCells = Array.from({ length: adjustedFirstDayWeekday }).map((_, index) => (
-      <DayCell
-        today={false}
-        onPress={() => {}}
-        day={null}
-        text={null}
-        key={`emptycell-${index}`}
-        fontSize={FONT_SIZE}
-        width={cellWidth}
-      />
-    ));
-  
+    const emptyCells = Array.from({length: adjustedFirstDayWeekday}).map(
+      (_, index) => (
+        <DayCell
+          today={false}
+          onPress={() => {}}
+          day={null}
+          text={null}
+          key={`emptycell-${index}`}
+          fontSize={FONT_SIZE}
+          width={cellWidth}
+        />
+      ),
+    );
+
     let schedulerCells = [...emptyCells];
     let i = 0;
-  
+
     while (i < tongSoNgay) {
       const currentDate = dayjs(new Date(nam, thang - 1, data[i].day));
       const currentDayOfWeek = currentDate.day(); // Get the day of the week (0 = Sunday, 6 = Saturday)
-  
+
       // Determine text color based on the day of the week
       let textColor;
       if (currentDayOfWeek === 0) {
@@ -158,30 +161,28 @@ export const XemCa = () => {
       } else {
         textColor = COLORS.BLACK; // Default color for other days
       }
-  
+
       const cell = (
         <DayCell
           today={todayText === currentDate.format('YYYYMMDD')}
-          onPress={() => {
-            // will add something here if needed
-          }}
+          onPress={() => {}}
           day={data[i].day}
           text={data[i].text}
           key={`cell-${data[i].day}`}
           fontSize={FONT_SIZE}
           width={cellWidth}
-          textColor={textColor} // Pass the text color as a prop
+          textColor={textColor}
         />
       );
-  
+
       schedulerCells.push(cell);
-  
+
       // đã đủ cột trên 1 dòng, hoặc dòng cuối
       if (schedulerCells.length === cellPerRow || i === tongSoNgay - 1) {
         // trường hợp dòng cuối chưa đủ số cột
         if (schedulerCells.length % cellPerRow !== 0) {
           const soCotThieu = cellPerRow - (schedulerCells.length % cellPerRow);
-  
+
           for (let j = 0; j < soCotThieu; j++) {
             schedulerCells.push(
               <DayCell
@@ -196,20 +197,20 @@ export const XemCa = () => {
             );
           }
         }
-  
+
         const row = (
           <View style={styles.rowStyle} key={`row-${i}`}>
             {schedulerCells}
           </View>
         );
-  
+
         schedulerRows.push(row);
         schedulerCells = [];
       }
-  
+
       i++;
     }
-  
+
     return <View>{schedulerRows}</View>;
   };
 
@@ -247,7 +248,7 @@ export const XemCa = () => {
               animating={true}
               size="large"
               color="#40adf5"
-              style={{ marginTop: MARGIN * 2 }}
+              style={{marginTop: MARGIN * 2}}
             />
           )}
           {error && (
@@ -283,7 +284,7 @@ const style1 = StyleSheet.create({
   daysOfWeekContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10, 
+    marginBottom: 10,
   },
   dayOfWeekText: {
     fontSize: 16,
