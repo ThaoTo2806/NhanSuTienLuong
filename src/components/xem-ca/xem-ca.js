@@ -12,6 +12,9 @@ import {
   Text,
   View,
   StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Button,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
@@ -24,6 +27,9 @@ import {MESSAGES} from '../../assets/messages';
 import {LangContext} from '../common/contexts';
 import {styles} from './style';
 import {BaseAxios} from '../../helpers/base-axios';
+import {loadData1} from '../../services/baocaocong';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {STORAGE_KEYS as KEYS} from '../../assets/storage-keys';
 
 const {formGroup, label, content: contentStyle} = commonStyles;
 const {BORDER_RADIUS, FONT_SIZE, MARGIN, PADDING} = SPACINGS;
@@ -35,11 +41,31 @@ export const XemCa = () => {
   const [nam, setNam] = useState(new Date().getFullYear());
   const [thang, setThang] = useState(new Date().getMonth() + 1);
   const [error, setError] = useState(false);
-  const [cellPerRow, setCellPerRow] = useState(null);
-  const [cellWidth, setCellWidth] = useState(null);
+  const [cellPerRow, setCellPerRow] = useState(7);
+  const [cellWidth, setCellWidth] = useState(50);
+  const [loaiBaoCao, setLoaiBaoCao] = useState('theo giờ');
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const mounted = useRef(true);
 
+  const handleSaveReportType = reportType => {
+    setLoaiBaoCao(reportType);
+    setIsReportModalVisible(false);
+  };
+
   const layBangCa_ = useCallback(async () => {
+    let token = '';
+    let userName = '';
+
+    try {
+      token = await AsyncStorage.getItem(KEYS.TOKEN);
+      userName = await AsyncStorage.getItem(KEYS.USERNAME);
+      console.log('token', token);
+      console.log('userName', userName);
+    } catch (err) {
+      console.log('LỖI LẤY TOKEN HOẶC USERNAME:', err);
+      return; // dừng hàm nếu không lấy được token/username
+    }
+
     if (mounted.current) {
       setLoading(true);
     }
@@ -51,25 +77,38 @@ export const XemCa = () => {
         .add(1, 'M')
         .subtract(1, 'd')
         .format('YYYY-MM-DD');
+      let newData = [];
+      if (loaiBaoCao === 'theo ca') {
+        const query = {
+          table: 'tc_lv0011',
+          func: 'data',
+          month: thang,
+          year: nam,
+        };
 
-      const query = {
-        table: 'tc_lv0011',
-        func: 'data',
-        month: thang,
-        year: nam,
-      };
-
-      const json = await BaseAxios.get('/', {query});
-      const newData = json.data
-        .map(d => ({
-          day: dayjs(d.lv004).date(),
-          text: d.lv015 ? d.lv015 : '',
-        }))
-        .sort((a, b) => a.day - b.day);
+        const json = await BaseAxios.get('/', {query});
+        newData = json.data
+          .map(d => ({
+            day: dayjs(d.lv004).date(),
+            text: d.lv015 ? d.lv015 : '',
+          }))
+          .sort((a, b) => a.day - b.day);
+      } else {
+        newData = await loadData1(
+          token,
+          '0012',
+          userName,
+          nam,
+          thang,
+          'select2',
+        );
+        console.log('newData', newData.data);
+      }
 
       if (mounted.current) {
         setLoading(false);
-        setData(newData);
+        if (loaiBaoCao === 'theo ca') setData(newData);
+        else setData(newData.data);
         setError(false);
       }
     } catch {
@@ -79,33 +118,11 @@ export const XemCa = () => {
         setError(true);
       }
     }
-  }, [nam, thang]);
-
-  useEffect(() => {
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    layBangCa_();
-  }, [layBangCa_]);
+  }, [nam, thang, loaiBaoCao]);
 
   const onLayout_ = () => {
-    const {height, width} = Dimensions.get('window');
-    const ratio = width / height;
-
-    let newCellPerRow;
-
-    if (ratio < 0.7) {
-      newCellPerRow = 7;
-    } else if (ratio <= 1) {
-      newCellPerRow = 5;
-    } else if (ratio <= 1.4) {
-      newCellPerRow = 7;
-    } else {
-      newCellPerRow = 8;
-    }
+    const {width} = Dimensions.get('window');
+    const newCellPerRow = 7; // Cố định 7 cột cho tuần
 
     const newCellWidth = parseInt(
       (width - (MARGIN + PADDING + 1) * 2) / newCellPerRow,
@@ -118,19 +135,34 @@ export const XemCa = () => {
     }
   };
 
+  useEffect(() => {
+    onLayout_(); // gọi khi khởi tạo
+
+    const subscription = Dimensions.addEventListener('change', () => {
+      onLayout_(); // gọi lại khi xoay màn hình
+    });
+
+    return () => {
+      mounted.current = false;
+      subscription?.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    layBangCa_();
+  }, [layBangCa_]);
+
   const generateGrid_ = () => {
     const todayText = dayjs().format('YYYYMMDD');
     const schedulerRows = [];
-    const tongSoNgay = data.length;
 
-    // Get the first day of the month and its weekday
     const firstDayOfMonth = dayjs(new Date(nam, thang - 1, 1));
-    const firstDayWeekday = firstDayOfMonth.day(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const daysInMonth = firstDayOfMonth.daysInMonth();
+    const firstDayWeekday = firstDayOfMonth.day(); // 0 = Sunday
+    const adjustedFirstDayWeekday = (firstDayWeekday + 6) % 7; // Chuyển CN về cuối tuần
 
-    // Adjust the firstDayWeekday to match the desired start of the week (Monday)
-    const adjustedFirstDayWeekday = (firstDayWeekday + 6) % 7; // Convert to 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
+    const dataMap = new Map(data.map(item => [parseInt(item.day), item.text]));
 
-    // Add empty cells for days before the first day of the month
     const emptyCells = Array.from({length: adjustedFirstDayWeekday}).map(
       (_, index) => (
         <DayCell
@@ -146,29 +178,27 @@ export const XemCa = () => {
     );
 
     let schedulerCells = [...emptyCells];
-    let i = 0;
 
-    while (i < tongSoNgay) {
-      const currentDate = dayjs(new Date(nam, thang - 1, data[i].day));
-      const currentDayOfWeek = currentDate.day(); // Get the day of the week (0 = Sunday, 6 = Saturday)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const currentDate = dayjs(new Date(nam, thang - 1, d));
+      const currentDayOfWeek = currentDate.day(); // 0 = CN
 
-      // Determine text color based on the day of the week
       let textColor;
       if (currentDayOfWeek === 0) {
-        textColor = 'red'; // Sunday
+        textColor = 'red';
       } else if (currentDayOfWeek === 6) {
-        textColor = 'green'; // Saturday
+        textColor = 'green';
       } else {
-        textColor = COLORS.BLACK; // Default color for other days
+        textColor = COLORS.BLACK;
       }
 
       const cell = (
         <DayCell
           today={todayText === currentDate.format('YYYYMMDD')}
           onPress={() => {}}
-          day={data[i].day}
-          text={data[i].text}
-          key={`cell-${data[i].day}`}
+          day={d}
+          text={dataMap.get(d) || null}
+          key={`cell-${d}`}
           fontSize={FONT_SIZE}
           width={cellWidth}
           textColor={textColor}
@@ -177,12 +207,9 @@ export const XemCa = () => {
 
       schedulerCells.push(cell);
 
-      // đã đủ cột trên 1 dòng, hoặc dòng cuối
-      if (schedulerCells.length === cellPerRow || i === tongSoNgay - 1) {
-        // trường hợp dòng cuối chưa đủ số cột
-        if (schedulerCells.length % cellPerRow !== 0) {
-          const soCotThieu = cellPerRow - (schedulerCells.length % cellPerRow);
-
+      if (schedulerCells.length % cellPerRow === 0 || d === daysInMonth) {
+        const soCotThieu = cellPerRow - (schedulerCells.length % cellPerRow);
+        if (soCotThieu !== cellPerRow) {
           for (let j = 0; j < soCotThieu; j++) {
             schedulerCells.push(
               <DayCell
@@ -190,7 +217,7 @@ export const XemCa = () => {
                 onPress={() => {}}
                 day={null}
                 text={null}
-                key={`emptycell-${j}`}
+                key={`emptycell-${d}-fill-${j}`}
                 fontSize={FONT_SIZE}
                 width={cellWidth}
               />,
@@ -198,24 +225,21 @@ export const XemCa = () => {
           }
         }
 
-        const row = (
-          <View style={styles.rowStyle} key={`row-${i}`}>
+        schedulerRows.push(
+          <View style={styles.rowStyle} key={`row-${d}`}>
             {schedulerCells}
-          </View>
+          </View>,
         );
 
-        schedulerRows.push(row);
         schedulerCells = [];
       }
-
-      i++;
     }
 
     return <View>{schedulerRows}</View>;
   };
 
   return (
-    <View onLayout={onLayout_}>
+    <View>
       <ScrollView>
         <View style={formGroup}>
           <Text style={label}>Tháng</Text>
@@ -232,15 +256,103 @@ export const XemCa = () => {
           />
         </View>
         <View style={formGroup}>
-          <Text style={label}>Lịch ca làm việc</Text>
-          <View style={style1.daysOfWeekContainer}>
-            <Text style={style1.dayOfWeekText}>Mon</Text>
-            <Text style={style1.dayOfWeekText}>Tue</Text>
-            <Text style={style1.dayOfWeekText}>Wed</Text>
-            <Text style={style1.dayOfWeekText}>Thu</Text>
-            <Text style={style1.dayOfWeekText}>Fri</Text>
-            <Text style={style1.dayOfWeekText}>Sat</Text>
-            <Text style={style1.dayOfWeekText}>Sun</Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+            <Text style={{color: '#007bff', fontSize: 16}}>Loại báo cáo</Text>
+
+            <TouchableOpacity
+              onPress={() => setIsReportModalVisible(true)}
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                paddingVertical: 6,
+                paddingHorizontal: 80,
+                borderRadius: 6,
+              }}>
+              <Text style={{fontSize: 16, color: '#3973ac'}}>{loaiBaoCao}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={label}>Lịch {loaiBaoCao} làm việc</Text>
+
+          {/* Modal chọn loại báo cáo */}
+          <Modal
+            visible={isReportModalVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setIsReportModalVisible(false)}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              }}>
+              <View
+                style={{
+                  backgroundColor: 'white',
+                  padding: 20,
+                  borderRadius: 10,
+                  width: '80%',
+                }}>
+                <Text
+                  style={{fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>
+                  Chọn loại lịch làm việc
+                </Text>
+
+                {['theo ca', 'theo giờ'].map(type => (
+                  <TouchableOpacity
+                    key={type}
+                    onPress={() => handleSaveReportType(type)}>
+                    <Text
+                      style={{
+                        padding: 10,
+                        fontSize: 16,
+                        color: loaiBaoCao === type ? 'green' : 'black',
+                      }}>
+                      {loaiBaoCao === type ? '✔ ' : ''}
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+                <Button
+                  title="Cancel"
+                  onPress={() => setIsReportModalVisible(false)}
+                />
+              </View>
+            </View>
+          </Modal>
+          <View
+            style={[
+              style1.daysOfWeekContainer,
+              {width: cellPerRow * cellWidth},
+            ]}>
+            {Array.from({length: cellPerRow}).map((_, index) => {
+              const dayNames = [
+                'Mon',
+                'Tue',
+                'Wed',
+                'Thu',
+                'Fri',
+                'Sat',
+                'Sun',
+              ];
+              const label = index < 7 ? dayNames[index] : '';
+              return (
+                <Text
+                  key={`day-label-${index}`}
+                  style={[
+                    style1.dayOfWeekText,
+                    {width: cellWidth, textAlign: 'center'},
+                  ]}>
+                  {label}
+                </Text>
+              );
+            })}
           </View>
 
           {loading && (
@@ -289,8 +401,6 @@ const style1 = StyleSheet.create({
   dayOfWeekText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.BLACK,
-    textAlign: 'center',
-    width: 50,
+    color: '#1f3d7a',
   },
 });

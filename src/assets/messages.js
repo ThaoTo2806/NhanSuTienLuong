@@ -17,6 +17,8 @@ export const MESSAGES = {
     LOI_LIET_KE_CA: 'Lấy thông tin ca làm việc không thành công',
     CHUA_XEP_CA:
       'Tháng vừa chọn chưa được xếp ca, vui lòng liên hệ nhân viên quản trị',
+    CHUA_BAO_CAO:
+      'Tháng vừa chọn chưa có báo cáo, vui lòng liên hệ nhân viên quản trị',
     DUYET_PHEP_THANH_CONG: 'Duyệt phép thành công',
     TU_CHOI_PHEP_THANH_CONG: 'Từ chối phép thành công',
   },

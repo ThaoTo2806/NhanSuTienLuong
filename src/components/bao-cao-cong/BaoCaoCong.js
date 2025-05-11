@@ -27,9 +27,12 @@ import {MESSAGES} from '../../assets/messages';
 import {LangContext} from '../common/contexts';
 import {styles} from './style';
 import {BaseAxios} from '../../helpers/base-axios';
-import {loadData, loadData1, loadData2} from '../../services/baocaocong';
+import {loadData} from '../../services/baocaocong';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {STORAGE_KEYS as KEYS} from '../../assets/storage-keys';
+import TheoCa from './TheoCa';
+import TheoGio from './TheoGio';
+import TheoCong from './TheoCong';
 
 const {formGroup, label, content: contentStyle} = commonStyles;
 const {BORDER_RADIUS, FONT_SIZE, MARGIN, PADDING} = SPACINGS;
@@ -38,6 +41,7 @@ export const BaoCaoCong = () => {
   const {lang} = useContext(LangContext);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
+  const [n, setN] = useState(0);
   const [nam, setNam] = useState(new Date().getFullYear());
   const [thang, setThang] = useState(new Date().getMonth() + 1);
   const [error, setError] = useState(false);
@@ -53,14 +57,12 @@ export const BaoCaoCong = () => {
   };
 
   const layBangCong = useCallback(async () => {
-    console.log('layBangCong');
     let token = '';
     let userName = '';
 
     try {
       token = await AsyncStorage.getItem(KEYS.TOKEN);
       userName = await AsyncStorage.getItem(KEYS.USERNAME);
-      console.log('layBangCong1111');
       console.log('token', token);
       console.log('userName', userName);
     } catch (err) {
@@ -83,25 +85,29 @@ export const BaoCaoCong = () => {
       let newData = [];
 
       if (loaiBaoCao === 'Theo ca') {
-        newData = await loadData(token, '0011', userName, '2018', 'select');
-        console.log('newData', newData);
+        newData = await loadData(token, '0011', userName, nam, 'select2');
+        console.log('newData', newData.data);
+        console.log('newData', newData.data.length);
       } else if (loaiBaoCao === 'Theo giờ') {
-        newData = await loadData1(token, '0012', userName, nam, 'select');
-        console.log('newData', newData);
-      } else {
-        newData = await loadData2(token, '0011', userName, nam, 'select2');
-        console.log('newData', newData);
+        newData = await loadData(token, '0012', userName, nam, 'select');
+        //console.log('newData', newData);
+      } else if (loaiBaoCao === 'Theo công') {
+        newData = await loadData(token, '0011', userName, nam, 'select');
+        console.log('newData', newData.data);
+        console.log('newData', newData.data.length);
       }
 
       if (mounted.current) {
         setLoading(false);
         setData(newData.data);
+        setN(newData.data.length);
         setError(false);
       }
     } catch {
       if (mounted.current) {
         setLoading(false);
         setData([]);
+        setN(0);
         setError(true);
       }
     }
@@ -145,11 +151,24 @@ export const BaoCaoCong = () => {
   };
 
   const generateGrid_ = () => {
-    return (
-      <View>
-        <Text>Hello world!</Text>
-      </View>
-    );
+    if (!data || n === 0) {
+      return (
+        <View style={{padding: 20}}>
+          <Text>Không có dữ liệu để hiển thị</Text>
+        </View>
+      );
+    }
+
+    switch (loaiBaoCao) {
+      case 'Theo ca':
+        return <TheoCa data={data} />;
+      case 'Theo giờ':
+        return <TheoGio data={data} />;
+      case 'Theo công':
+        return <TheoCong data={data} />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -269,10 +288,10 @@ export const BaoCaoCong = () => {
               </View>
             </View>
           )}
-          {!loading && !error && (
-            <Text style={contentStyle}>{MESSAGES[lang].CHUA_XEP_CA}</Text>
+          {!loading && !error && n === 0 && (
+            <Text style={contentStyle}>{MESSAGES[lang].CHUA_BAO_CAO}</Text>
           )}
-          {!loading && !error && generateGrid_()}
+          {!loading && !error && n > 0 && generateGrid_()}
         </View>
       </ScrollView>
     </View>
