@@ -1,5 +1,5 @@
 import React, {useContext, useState, useEffect} from 'react';
-import {Image, ScrollView, Text, View} from 'react-native';
+import {Image, ScrollView, Text, View, TouchableOpacity} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -9,12 +9,15 @@ import {STORAGE_KEYS as KEYS} from '../../assets/storage-keys';
 import {styles} from './style';
 import {AuthContext} from '../common/contexts';
 import {API_URLS} from '../../assets/api-urls';
+import ModalCustom from '../ModalCustom';
+import {modalStyles} from './modalStyles';
 
 const {FONT_SIZE} = SPACINGS;
 const {GRADIENT} = COLORS;
 
 export const Menu = ({navigation}) => {
   const [permission, setPermission] = useState(null);
+  const [isModalVisible, setModalVisible] = useState(false);
   const {signOut} = useContext(AuthContext);
 
   useEffect(() => {
@@ -22,9 +25,9 @@ export const Menu = ({navigation}) => {
 
     (async () => {
       const storedPermission = await AsyncStorage.getItem(KEYS.PERMISSION);
-
       if (mounted) {
         setPermission(JSON.parse(storedPermission));
+        setModalVisible(true); // 👉 show modal here
       }
     })();
 
@@ -32,6 +35,10 @@ export const Menu = ({navigation}) => {
       mounted = false;
     };
   }, []);
+
+  const closeModal = () => {
+    setModalVisible(false);
+  };
 
   const _logOut = async () => {
     // Xóa thông tin đăng nhập khỏi AsyncStorage
@@ -221,6 +228,22 @@ export const Menu = ({navigation}) => {
           </Icon.Button>
         </View>
       </ScrollView>
+      {/* 👉 Modal holiday message */}
+      <ModalCustom isVisible={isModalVisible} onBackdropPress={closeModal}>
+        <View style={modalStyles.modalContent}>
+          <Image
+            source={require('../../assets/images/holiday.jpg')}
+            style={modalStyles.image}
+            resizeMode="contain"
+          />
+          <Text style={modalStyles.title}>Thông báo</Text>
+          <Text style={modalStyles.message}>
+            Chào mừng ngày lễ 30/4 - 1/5!{'\n'}
+            Công ty chính thức nghỉ từ 29/4 - 5/5.{'\n'}
+            Chúc các bạn có kỳ nghỉ vui vẻ. Trân trọng!
+          </Text>
+        </View>
+      </ModalCustom>
     </View>
   );
 };
