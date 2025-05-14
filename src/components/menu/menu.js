@@ -11,6 +11,7 @@ import {AuthContext} from '../common/contexts';
 import {API_URLS} from '../../assets/api-urls';
 import ModalCustom from '../ModalCustom';
 import {modalStyles} from './modalStyles';
+import {loadData} from '../../services/thongbao';
 
 const {FONT_SIZE} = SPACINGS;
 const {GRADIENT} = COLORS;
@@ -18,6 +19,8 @@ const {GRADIENT} = COLORS;
 export const Menu = ({navigation}) => {
   const [permission, setPermission] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [dataList, setDataList] = useState([]);
+  const [token, setToken] = useState(null);
   const {signOut} = useContext(AuthContext);
 
   useEffect(() => {
@@ -25,9 +28,20 @@ export const Menu = ({navigation}) => {
 
     (async () => {
       const storedPermission = await AsyncStorage.getItem(KEYS.PERMISSION);
+      const storedToken = await AsyncStorage.getItem(KEYS.TOKEN);
       if (mounted) {
         setPermission(JSON.parse(storedPermission));
+        setToken(storedToken);
         setModalVisible(true); // 👉 show modal here
+
+        const res = await loadData(storedToken, '0221', 'select');
+        if (res.success && Array.isArray(res.data)) {
+          // Sort by lv003 ASC
+          const sorted = res.data.sort(
+            (a, b) => parseInt(a.lv003) - parseInt(b.lv003),
+          );
+          setDataList(sorted);
+        }
       }
     })();
 
@@ -230,19 +244,17 @@ export const Menu = ({navigation}) => {
       </ScrollView>
       {/* 👉 Modal holiday message */}
       <ModalCustom isVisible={isModalVisible} onBackdropPress={closeModal}>
-        <View style={modalStyles.modalContent}>
-          <Image
-            source={require('../../assets/images/holiday.jpg')}
-            style={modalStyles.image}
-            resizeMode="contain"
-          />
-          <Text style={modalStyles.title}>Thông báo</Text>
-          <Text style={modalStyles.message}>
-            Chào mừng ngày lễ 30/4 - 1/5!{'\n'}
-            Công ty chính thức nghỉ từ 29/4 - 5/5.{'\n'}
-            Chúc các bạn có kỳ nghỉ vui vẻ. Trân trọng!
-          </Text>
-        </View>
+        {dataList.length > 0 && (
+          <View style={modalStyles.modalContent}>
+            <Image
+              source={{uri: dataList[0].image}} // ảnh từ API (URL)
+              style={modalStyles.image}
+              resizeMode="contain"
+            />
+            <Text style={modalStyles.title}>Thông báo</Text>
+            <Text style={modalStyles.message}>{dataList[0].lv002}</Text>
+          </View>
+        )}
       </ModalCustom>
     </View>
   );
